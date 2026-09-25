@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,7 @@ type MockStore struct {
 	healthScores       map[string]ContractHealthScore
 	indexerCursors     map[string]uint32
 	contractVersions   map[string][]ContractVersion
+	alertGroups        []AlertGroup
 
 	// Error injection
 	UpsertContractErr           error
@@ -272,6 +274,9 @@ func (m *MockStore) ListInvocations(_ context.Context, contractID, cursor string
 			continue
 		}
 		if f.Network != "" && inv.Network != f.Network {
+			continue
+		}
+		if f.FunctionName != "" && inv.FunctionName != f.FunctionName {
 			continue
 		}
 		out = append(out, inv)
@@ -896,3 +901,21 @@ func (m *MockStore) GetLatestContractVersion(_ context.Context, contractID strin
 	return latest, nil
 }
 
+func (m *MockStore) SearchContracts(_ context.Context, query string, limit int) ([]Contract, error) {
+	if query == "" {
+		return []Contract{}, nil
+	}
+	var results []Contract
+	searchPattern := strings.ToLower(query)
+
+	for _, c := range m.contracts {
+		if strings.Contains(strings.ToLower(c.ID), searchPattern) || strings.Contains(strings.ToLower(c.Label), searchPattern) {
+			results = append(results, c)
+			if len(results) >= limit {
+				break
+			}
+		}
+	}
+
+	return results, nil
+}
