@@ -168,9 +168,8 @@ function rowTexts(): string[] {
 }
 
 async function renderPage() {
-  const { default: InvocationsPage } = await import(
-    "@/app/(app)/invocations/page"
-  );
+  const { default: InvocationsPage } =
+    await import("@/app/(app)/invocations/page");
   return render(<InvocationsPage />);
 }
 

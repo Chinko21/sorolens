@@ -201,9 +201,8 @@ describe("ContractsPage", () => {
 
   // Helper: dynamic import so mocks are in place before module loads
   async function renderPage() {
-    const { default: ContractsPage } = await import(
-      "@/app/(app)/contracts/page"
-    );
+    const { default: ContractsPage } =
+      await import("@/app/(app)/contracts/page");
     return render(<ContractsPage />);
   }
 

@@ -15,10 +15,7 @@ export interface UseEventStreamOptions {
 }
 
 export type StreamStatus =
-  | "connecting"
-  | "connected"
-  | "polling"
-  | "disconnected";
+  "connecting" | "connected" | "polling" | "disconnected";
 
 export function useEventStream(
   contractIdOrOptions?: string | UseEventStreamOptions
