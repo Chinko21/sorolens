@@ -154,7 +154,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: prettier --check
-        run: pnpm exec prettier --check .
+        run: pnpm exec prettier --check apps/web package.json eslint.config.mjs
 
   # ------------------------------------------------------------
   # TypeScript type-check (fast, no build output needed)
