@@ -86,3 +86,12 @@ export function getByGithub(githubLogin: string): Link | null {
     .get(githubLogin) as Link | undefined;
   return row ?? null;
 }
+
+export function listLinks(limit = 100, offset = 0): Link[] {
+  const conn = requireDb();
+  return conn
+    .prepare(
+      "SELECT discord_id AS discordId, github_login AS githubLogin, linked_at AS linkedAt FROM links ORDER BY linked_at DESC LIMIT ? OFFSET ?",
+    )
+    .all(limit, offset) as Link[];
+}

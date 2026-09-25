@@ -8,7 +8,7 @@
  */
 
 import type { ChatInputCommandInteraction, Client, Interaction, Guild } from "discord.js";
-import { getByDiscord, unlink, upsertLink } from "./db.js";
+import { getByDiscord, listLinks, unlink, upsertLink } from "./db.js";
 import { countMergedPRs, getUser } from "./github.js";
 import { syncRoles, type Tiers } from "./roles.js";
 import { buildConnectUrl } from "./oauth.js";
@@ -64,6 +64,8 @@ async function handle(interaction: ChatInputCommandInteraction, ctx: CommandCont
       return handleWhoAmI(interaction);
     case "mypr":
       return handleMyPR(interaction, ctx);
+    case "members":
+      return handleMembers(interaction, ctx);
     default:
       await interaction.reply({ content: "Unknown command.", flags: 64 });
   }
@@ -158,6 +160,64 @@ async function handleMyPR(interaction: ChatInputCommandInteraction, ctx: Command
   await interaction.editReply({
     content: `\`${link.githubLogin}\` has **${count}** merged PR${count === 1 ? "" : "s"} in ${ctx.config.githubRepo}. Current tier: **${tier}**.`,
   });
+}
+
+
+async function handleMembers(interaction: ChatInputCommandInteraction, ctx: CommandContext) {
+  await interaction.deferReply({ flags: 64 });
+
+  const filter = (interaction.options.getString("filter") ?? "all") as
+    | "all"
+    | "contributor"
+    | "core"
+    | "none";
+
+  const links = listLinks(200);
+  if (links.length === 0) {
+    await interaction.editReply({ content: "No linked members yet." });
+    return;
+  }
+
+  const guild = interaction.guild;
+  const rows: string[] = [];
+
+  for (const link of links) {
+    let tier = "none";
+    if (guild) {
+      const member = await guild.members.fetch(link.discordId).catch(() => null);
+      if (member) {
+        if (member.roles.cache.has(ctx.tiers.coreContributor)) tier = "core";
+        else if (member.roles.cache.has(ctx.tiers.contributor)) tier = "contributor";
+      }
+    }
+    if (filter !== "all" && tier !== filter) continue;
+    const tierLabel =
+      tier === "core" ? "⭐ Core Contributor" : tier === "contributor" ? "✅ Contributor" : "— No role";
+    rows.push(`<@${link.discordId}> → \`${link.githubLogin}\` ${tierLabel}`);
+  }
+
+  if (rows.length === 0) {
+    await interaction.editReply({ content: `No members match filter **${filter}**.` });
+    return;
+  }
+
+  // Discord message limit is 2000 chars; split into chunks if needed.
+  const header = `**Linked members** (${rows.length}):\n`;
+  const chunks: string[] = [];
+  let current = header;
+  for (const row of rows) {
+    if (current.length + row.length + 1 > 1900) {
+      chunks.push(current);
+      current = "";
+    }
+    current += row + "\n";
+  }
+  if (current) chunks.push(current);
+
+  await interaction.editReply({ content: chunks[0] });
+  for (const chunk of chunks.slice(1)) {
+    await interaction.followUp({ content: chunk, flags: 64 });
+  }
 }
 
 

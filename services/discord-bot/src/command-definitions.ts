@@ -32,4 +32,20 @@ export const commandDefinitions = [
   new SlashCommandBuilder()
     .setName("mypr")
     .setDescription("Show your merged PR count and current tier for sorolens/sorolens"),
+  new SlashCommandBuilder()
+    .setName("members")
+    .setDescription("(Admin) List linked members and their roles")
+    .setDefaultMemberPermissions("0")
+    .addStringOption((o) =>
+      o
+        .setName("filter")
+        .setDescription("Filter by tier")
+        .setRequired(false)
+        .addChoices(
+          { name: "All linked", value: "all" },
+          { name: "Contributor", value: "contributor" },
+          { name: "Core Contributor", value: "core" },
+          { name: "No role yet", value: "none" },
+        ),
+    ),
 ].map((c) => c.toJSON());
