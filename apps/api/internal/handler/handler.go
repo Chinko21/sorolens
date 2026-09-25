@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/sorolens/sorolens/apps/api/internal/store"
@@ -39,4 +40,10 @@ type Handler struct {
 	Redis       Pinger
 	RedisClient RedisClient
 	Logger      *slog.Logger
+	StreamHub   *StreamHub
+
+	// summaryCacheOnce guards lazy construction of summaryCache, the
+	// process-wide memo for composite per-contract dashboard summaries.
+	summaryCacheOnce sync.Once
+	summaryCacheVal  *SummaryCache
 }
